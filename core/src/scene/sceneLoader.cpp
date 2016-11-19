@@ -54,14 +54,26 @@ bool SceneLoader::loadScene(std::shared_ptr<Scene> _scene) {
 
     Importer sceneImporter;
 
+    clock_t begin = clock();
+
     _scene->config() = sceneImporter.applySceneImports(_scene->path(), _scene->resourceRoot());
 
-    if (_scene->config()) {
+    float loadTime = (float(clock() - begin) / CLOCKS_PER_SEC) * 1000;
+    LOG("--------load %f", loadTime);
 
+    if (_scene->config()) {
+        begin = clock();
         // Load font resources
         _scene->fontContext()->loadFonts();
 
+        loadTime = (float(clock() - begin) / CLOCKS_PER_SEC) * 1000;
+        LOG("--------fonts %f", loadTime);
+
+        begin = clock();
         applyConfig(_scene);
+
+        loadTime = (float(clock() - begin) / CLOCKS_PER_SEC) * 1000;
+        LOG("--------apply %f", loadTime);
 
         return true;
     }
@@ -143,10 +155,14 @@ bool SceneLoader::applyConfig(const std::shared_ptr<Scene>& _scene) {
     _scene->styles().emplace_back(new PointStyle("points", _scene->fontContext()));
     _scene->styles().emplace_back(new RasterStyle("raster"));
 
+    clock_t begin = clock();
+
     if (config["global"]) {
         applyGlobals(config, *_scene);
     }
 
+    float loadTime = (float(clock() - begin) / CLOCKS_PER_SEC) * 1000;
+    LOG("--------apply globals %f", loadTime);
 
     if (Node sources = config["sources"]) {
         for (const auto& source : sources) {
@@ -160,6 +176,8 @@ bool SceneLoader::applyConfig(const std::shared_ptr<Scene>& _scene) {
         LOGW("No source defined in the yaml scene configuration.");
     }
 
+    begin = clock();
+
     if (Node textures = config["textures"]) {
         for (const auto& texture : textures) {
             try { loadTexture(texture, _scene); }
@@ -168,6 +186,9 @@ bool SceneLoader::applyConfig(const std::shared_ptr<Scene>& _scene) {
             }
         }
     }
+
+    loadTime = (float(clock() - begin) / CLOCKS_PER_SEC) * 1000;
+    LOG("-------- textures %f", loadTime);
 
     if (Node fonts = config["fonts"]) {
         if (fonts.IsMap()) {
@@ -179,6 +200,8 @@ bool SceneLoader::applyConfig(const std::shared_ptr<Scene>& _scene) {
             }
         }
     }
+
+    begin = clock();
 
     if (Node styles = config["styles"]) {
         StyleMixer mixer;
@@ -199,6 +222,9 @@ bool SceneLoader::applyConfig(const std::shared_ptr<Scene>& _scene) {
         }
     }
 
+    loadTime = (float(clock() - begin) / CLOCKS_PER_SEC) * 1000;
+    LOG("-------- styles %f", loadTime);
+
     // Styles that are opaque must be ordered first in the scene so that
     // they are rendered 'under' styles that require blending
     std::sort(_scene->styles().begin(), _scene->styles().end(), Style::compare);
@@ -210,6 +236,8 @@ bool SceneLoader::applyConfig(const std::shared_ptr<Scene>& _scene) {
         styles[i]->setID(i);
     }
 
+    begin = clock();
+
     if (Node layers = config["layers"]) {
         for (const auto& layer : layers) {
             try { loadLayer(layer, _scene); }
@@ -218,6 +246,9 @@ bool SceneLoader::applyConfig(const std::shared_ptr<Scene>& _scene) {
             }
         }
     }
+
+    loadTime = (float(clock() - begin) / CLOCKS_PER_SEC) * 1000;
+    LOG("-------- layers  %f", loadTime);
 
     if (Node lights = config["lights"]) {
         for (const auto& light : lights) {
@@ -255,9 +286,15 @@ bool SceneLoader::applyConfig(const std::shared_ptr<Scene>& _scene) {
         _scene->animated(animated.as<bool>());
     }
 
+
+    begin = clock();
+
     for (auto& style : _scene->styles()) {
         style->build(*_scene);
     }
+
+    loadTime = (float(clock() - begin) / CLOCKS_PER_SEC) * 1000;
+    LOG("--------build styles %f", loadTime);
 
     return true;
 }
