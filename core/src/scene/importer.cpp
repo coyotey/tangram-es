@@ -2,6 +2,7 @@
 #include "platform.h"
 #include "scene/sceneLoader.h"
 #include "yaml-cpp/yaml.h"
+#include "util/yamlLoader.h"
 #include "log.h"
 
 #include <regex>
@@ -85,7 +86,8 @@ void Importer::processScene(const Url& scenePath, const std::string &sceneString
     }
 
     try {
-        auto sceneNode = YAML::Load(sceneString);
+        YamlLoader loader;
+        auto sceneNode = loader.load(sceneString.data(), sceneString.size());
 
         m_scenes[scenePath] = sceneNode;
 
