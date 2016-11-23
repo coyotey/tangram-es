@@ -322,7 +322,7 @@ void setCurrentThreadPriority(int priority) {
     setpriority(PRIO_PROCESS, tid, priority);
 }
 
-void labelPickCallback(jobject listener, const Tangram::LabelPickResult* labelPickResult) {
+void labelPickCallback(jobject listener, const Tangram::FeaturePickResult* feature, const Tangram::LabelPickResult* label) {
 
     JniThreadBinding jniEnv(jvm);
 
@@ -330,11 +330,8 @@ void labelPickCallback(jobject listener, const Tangram::LabelPickResult* labelPi
 
     jobject touchLabel = nullptr;
 
-    if (labelPickResult) {
-        auto properties = labelPickResult->touchItem.properties;
-
-        position[0] = labelPickResult->touchItem.position[0];
-        position[1] = labelPickResult->touchItem.position[1];
+    if (feature) {
+        auto properties = feature.properties;
 
         jobject hashmap = jniEnv->NewObject(hashmapClass, hashmapInitMID);
 
@@ -344,9 +341,8 @@ void labelPickCallback(jobject listener, const Tangram::LabelPickResult* labelPi
             jniEnv->CallObjectMethod(hashmap, hashmapPutMID, jkey, jvalue);
         }
 
-        jdoubleArray darr = jniEnv->NewDoubleArray(2);
-        touchLabel = jniEnv->NewObject(touchLabelClass, touchLabelInitMID, labelPickResult->coordinate.longitude,
-            labelPickResult->coordinate.latitude, labelPickResult->type, hashmap);
+        touchLabel = jniEnv->NewObject(touchLabelClass, touchLabelInitMID, label->coordinate.longitude,
+            label->coordinate.latitude, label->type, hashmap);
     }
 
     jniEnv->CallVoidMethod(listener, onLabelPickMID, touchLabel, position[0], position[1]);

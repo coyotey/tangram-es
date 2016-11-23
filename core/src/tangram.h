@@ -21,17 +21,13 @@ struct FeaturePickResult {
     float position[2];
 };
 
-// Returns a pointer to the selected feature or null, only valid on the callback scope
-using FeaturePickCallback = std::function<void(const FeaturePickResult*)>;
-
 struct LabelPickResult {
     LabelType type;
     LngLat coordinate;
-    FeaturePickResult touchItem;
 };
 
-// Returns a pointer to the selected label or null, only valid on the callback scope
-using LabelPickCallback = std::function<void(const LabelPickResult*)>;
+// Returns a pointer to the selected feature or null, only valid on the callback scope
+using FeaturePickCallback = std::function<void(const FeaturePickResult*, const LabelPickResult*)>;
 
 struct SceneUpdate {
     std::string path;
